@@ -31,13 +31,20 @@ from .retriever import BM25Retriever
 
 def _load_corpus(path: str) -> BM25Retriever:
     docs: list[Document] = []
-    with open(path, encoding="utf-8") as fh:
-        for line in fh:
-            line = line.strip()
-            if not line:
-                continue
-            obj = json.loads(line)
-            docs.append(Document(id=str(obj["id"]), title=obj.get("title", ""), text=obj["text"]))
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for n, line in enumerate(fh, 1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    docs.append(Document(id=str(obj["id"]), title=obj.get("title", ""),
+                                         text=obj["text"]))
+                except (json.JSONDecodeError, KeyError) as exc:
+                    raise SystemExit(f"{path}:{n}: malformed corpus line ({exc})")
+    except FileNotFoundError:
+        raise SystemExit(f"corpus file not found: {path}")
     if not docs:
         raise SystemExit(f"no documents loaded from {path}")
     return BM25Retriever(docs)
