@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "self_rag"
+version = "0.1.0"
+description = "Self-RAG (Asai et al., 2023): retrieval-augmented generation with self-reflection and abstention, from scratch"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = []   # zero third-party deps — pure stdlib + OpenAI-compatible HTTP
+
+[project.scripts]
+self_rag = "self_rag.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["self_rag*"]
+
+[tool.setuptools.package-data]
+self_rag = ["py.typed"]
