@@ -132,6 +132,24 @@ make test        # or: python -m unittest discover -s self_rag/tests -t . -v
 parser, the scoring math, and the full control flow (answer, cite, select, and all
 four abstention paths) driven by a scripted fake LLM.
 
+## Limitations
+
+Worth being upfront about:
+
+- **Reflection quality is the base model's, not learned.** Because the four
+  judgements come from prompting rather than trained reflection tokens, they're only
+  as good as the model's zero-shot critiquing — a weak model can wave through an
+  irrelevant passage or vouch for an unsupported claim.
+- **Cost scales with passages.** Each relevant passage spends a generate + IsSup +
+  IsUse call, so a question with several relevant hits costs several model calls.
+  `--max-candidates` caps that.
+- **BM25 is lexical.** Retrieval matches words, not meaning, so it misses pure
+  paraphrases. Swapping in a dense retriever is a drop-in change — the reflection
+  pipeline is unaffected.
+- **Abstention is conservative by design.** The parsers fail safe, so a flaky model
+  will abstain more often than strictly necessary. For this tool, a false "I don't
+  know" is preferable to a confident wrong answer.
+
 ## License
 
 MIT
