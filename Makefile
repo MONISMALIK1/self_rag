@@ -1,4 +1,4 @@
-.PHONY: help test install clean ask bench
+.PHONY: help test install clean ask bench demo
 
 help:		## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -15,6 +15,9 @@ ask:		## Answer a question: make ask ARGS='"Which planet is the largest?" --show
 
 bench:		## Evaluate answer accuracy + abstention on the bundled eval set
 	python -m self_rag --bench
+
+demo:		## Run the healthcare example (grounding + abstention; offline by default)
+	cd .. && python -m self_rag.examples.healthcare.health_demo
 
 clean:		## Remove caches and build artifacts
 	find . -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true

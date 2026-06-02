@@ -104,6 +104,26 @@ Mars has two moons, Phobos and Deimos. [1]
 (grounded in [1] (mars), support=FULLY)
 ```
 
+## Example: a healthcare corpus
+
+`examples/healthcare/` is a worked example of *why* abstention matters. It runs the
+pipeline over a small set of citable clinical reference passages (drug doses,
+contraindications, INR targets — each naming its source) and shows the three
+behaviors a clinical assistant needs: **grounded, cited answers** for covered
+questions; **relevance filtering** of off-topic passages; and **abstention** when
+the corpus doesn't cover the question (e.g. appendicitis) — declining instead of
+guessing a dose.
+
+```bash
+make demo        # or: python -m self_rag.examples.healthcare.health_demo
+```
+
+It runs **live** when a backend is configured, and otherwise falls back to a
+deterministic offline critic so the full control flow is demonstrable with no
+network. *Illustrative only — not medical advice.* A real clinical tool would need
+validated sources, a dense/hybrid retriever, a trustworthy base model, PHI-safe
+inference, and a clinician in the loop.
+
 ## Design
 
 Everything that *decides* is pure stdlib and unit-tested offline; only the critic
