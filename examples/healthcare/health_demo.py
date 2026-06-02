@@ -160,7 +160,26 @@ def pick_backend():
     return extractive_critic, "OFFLINE (deterministic extractive critic, no network)"
 
 
-def show(res) -> None:
+class _Counter:
+    """Wrap a chat_fn to count reflection/generation calls (i.e. model calls)."""
+
+    def __init__(self, fn):
+        self._fn = fn
+        self.calls = 0
+
+    def __call__(self, prompt, model=None):
+        self.calls += 1
+        return self._fn(prompt, model=model)
+
+
+def run(q, retriever, chat_fn, early_exit):
+    counter = _Counter(chat_fn)
+    res = answer(q, retriever, k=4, max_candidates=3,
+                 early_exit=early_exit, chat_fn=counter)
+    return res, counter.calls
+
+
+def show(res, base_calls, fast_calls) -> None:
     print(f"\nQ: {res.query}")
     if res.did_retrieve and res.retrieved:
         kept = {h.doc.id for h in res.relevant}
@@ -173,6 +192,9 @@ def show(res) -> None:
     else:
         print(f"   -> {res.answer}")
         print(f"      ({res.reason})")
+    saved = base_calls - fast_calls
+    note = f"  ({saved} fewer)" if saved else "  (no saving — abstained after full scan)"
+    print(f"      model calls: {fast_calls} early-exit  vs  {base_calls} exhaustive{note}")
 
 
 QUESTIONS = [
@@ -195,10 +217,27 @@ def main() -> int:
     print(f"corpus: {CORPUS_PATH.name} ({len(retriever.documents)} citable reference passages)")
     print("NOT MEDICAL ADVICE - illustrative demonstration of grounding + abstention.")
     print("=" * 72)
+
+    base_total = fast_total = 0
+    diverged = []
     for q in QUESTIONS:
-        show(answer(q, retriever, k=4, max_candidates=3, chat_fn=chat_fn))
+        base_res, base_calls = run(q, retriever, chat_fn, early_exit=False)
+        fast_res, fast_calls = run(q, retriever, chat_fn, early_exit=True)
+        base_total += base_calls
+        fast_total += fast_calls
+        if (base_res.answer, base_res.abstained) != (fast_res.answer, fast_res.abstained):
+            diverged.append(q)
+        show(fast_res, base_calls, fast_calls)
+
+    saved = base_total - fast_total
+    pct = (saved / base_total * 100) if base_total else 0.0
     print("\n" + "-" * 72)
-    print("The last two have no covering passage (appendicitis; gabapentin), so")
+    print("Efficiency: early-exit accepts the first FULLY-supported, cited answer,")
+    print("skipping relevance + critique calls on the remaining passages.")
+    print(f"  total model calls:  {fast_total} early-exit  vs  {base_total} exhaustive"
+          f"   ->  {saved} fewer ({pct:.0f}% less)")
+    print(f"  same answers as exhaustive mode: {'yes' if not diverged else 'NO: ' + str(diverged)}")
+    print("\nThe last two have no covering passage (appendicitis; gabapentin), so")
     print("Self-RAG declines instead of fabricating a clinical answer.")
     print("Caveat: telling a near-miss apart -- e.g. 'dose of gabapentin' vs an")
     print("acetaminophen-dose passage -- needs the model's judgement; the crude")

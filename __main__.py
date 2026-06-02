@@ -73,7 +73,7 @@ def _print_trace(res) -> None:
 
 def _answer_one(args, retriever) -> int:
     res = answer(args.query, retriever, k=args.k, max_candidates=args.max_candidates,
-                 model=args.model)
+                 model=args.model, early_exit=args.fast)
     if args.show_trace:
         _print_trace(res)
     print("=" * 60)
@@ -91,7 +91,8 @@ def _bench(args, retriever) -> int:
 
     for i, ex in enumerate(EVAL_QUESTIONS, 1):
         res = answer(ex.question, retriever, k=args.k,
-                     max_candidates=args.max_candidates, model=args.model)
+                     max_candidates=args.max_candidates, model=args.model,
+                     early_exit=args.fast)
         should_abstain = ex.answer is None
 
         if should_abstain:
@@ -137,6 +138,9 @@ def main() -> int:
     p.add_argument("--corpus", default=None,
                    help="Path to a JSONL corpus ({id,title,text} per line); "
                         "defaults to the bundled corpus.")
+    p.add_argument("--fast", action="store_true",
+                   help="Early-exit: accept the first fully-supported answer, "
+                        "skipping critiques on remaining passages (fewer model calls).")
     p.add_argument("--show-trace", action="store_true",
                    help="Print the retrieve/relevance/critique trace.")
     p.add_argument("--bench", action="store_true",

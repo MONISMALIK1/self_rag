@@ -184,5 +184,89 @@ class AbstentionTests(unittest.TestCase):
         self.assertEqual(res.candidates, [])
 
 
+class EarlyExitTests(unittest.TestCase):
+    """`early_exit=True` accepts the first FULLY-supported answer, making fewer
+    model calls, while preserving the abstention guarantees."""
+
+    @staticmethod
+    def _counting(fake):
+        calls = {"n": 0}
+
+        def wrapped(prompt, model=None):
+            calls["n"] += 1
+            return fake(prompt, model=model)
+
+        return wrapped, calls
+
+    def test_early_exit_makes_fewer_calls_and_still_answers(self):
+        docs = [
+            Document("inr1", "Warfarin", "Warfarin target INR range is 2.0 to 3.0 for patients."),
+            Document("inr2", "Anticoagulation", "The warfarin INR target range is 2.0 to 3.0 usually."),
+        ]
+        retr = BM25Retriever(docs)
+
+        def fake(prompt, model=None):
+            s = step_of(prompt)
+            if s == "retrieve":
+                return "RETRIEVE"
+            if s == "relevance":
+                return "RELEVANT"
+            if s == "generate":
+                return "Warfarin INR target is 2.0 to 3.0. [1]"
+            if s == "support":
+                return "FULLY"
+            if s == "useful":
+                return "Rating: 5"
+            return "?"
+
+        q = "What is the warfarin INR target range?"
+        w_full, c_full = self._counting(fake)
+        full = answer(q, retr, chat_fn=w_full, early_exit=False)
+        w_fast, c_fast = self._counting(fake)
+        fast = answer(q, retr, chat_fn=w_fast, early_exit=True)
+
+        self.assertFalse(full.abstained)
+        self.assertFalse(fast.abstained)
+        self.assertEqual(fast.chosen.support, "FULLY")
+        self.assertLess(c_fast["n"], c_full["n"])  # stopped early -> fewer calls
+        self.assertEqual(len(fast.candidates), 1)   # only the first was critiqued
+
+    def test_early_exit_still_abstains_when_unsupported(self):
+        retr = BM25Retriever(DOCS)
+
+        def fake(prompt, model=None):
+            s = step_of(prompt)
+            if s == "retrieve":
+                return "RETRIEVE"
+            if s == "relevance":
+                return "RELEVANT" if "largest planet" in prompt else "IRRELEVANT"
+            if s == "generate":
+                return "Jupiter is the largest planet. [1]"
+            if s == "support":
+                return "NO_SUPPORT"
+            if s == "useful":
+                return "Rating: 5"
+            return "?"
+
+        res = answer("What is the largest planet?", retr, chat_fn=fake, early_exit=True)
+        self.assertTrue(res.abstained)
+        self.assertIn("not supported", res.reason)
+
+    def test_early_exit_still_abstains_when_all_irrelevant(self):
+        retr = BM25Retriever(DOCS)
+
+        def fake(prompt, model=None):
+            s = step_of(prompt)
+            if s == "retrieve":
+                return "RETRIEVE"
+            if s == "relevance":
+                return "IRRELEVANT"
+            return "?"
+
+        res = answer("What is the largest planet?", retr, chat_fn=fake, early_exit=True)
+        self.assertTrue(res.abstained)
+        self.assertIn("irrelevant", res.reason)
+
+
 if __name__ == "__main__":
     unittest.main()
