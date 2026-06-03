@@ -170,7 +170,16 @@ Worth being upfront about:
   pipeline is unaffected.
 - **Abstention is conservative by design.** The parsers fail safe, so a flaky model
   will abstain more often than strictly necessary. For this tool, a false "I don't
-  know" is preferable to a confident wrong answer.
+  know" is preferable to a confident wrong answer. When retrieval is simply *wrong*,
+  abstaining is all this pipeline can do — **[corrective_rag](https://github.com/MONISMALIK1/corrective_rag)**
+  picks up there, grading retrieval and *correcting* it (refine / fall back to an
+  external source / combine) instead of giving up.
+
+## Related
+
+**[corrective_rag](https://github.com/MONISMALIK1/corrective_rag)** — Corrective RAG
+(Yan et al., 2024), the successor to Self-RAG: it grades retrieval and corrects it
+rather than only abstaining. Built on this project's BM25 retriever and LLM client.
 
 ## License
 
