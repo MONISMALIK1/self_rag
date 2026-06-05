@@ -181,6 +181,10 @@ Worth being upfront about:
 (Yan et al., 2024), the successor to Self-RAG: it grades retrieval and corrects it
 rather than only abstaining. Built on this project's BM25 retriever and LLM client.
 
+**[hyde](https://github.com/MONISMALIK1/hyde)** — HyDE (Gao et al., 2022): improves
+the *retrieval query itself* by searching with an LLM-written hypothetical answer
+document. Complementary — it fixes retrieval *before* Self-RAG's reflection runs.
+
 ## License
 
 MIT
