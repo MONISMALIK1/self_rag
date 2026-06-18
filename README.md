@@ -148,7 +148,7 @@ toward abstaining rather than bluffing.
 make test        # or: python -m unittest discover -s self_rag/tests -t . -v
 ```
 
-50 offline tests, no API key required — covering BM25 ranking, every reflection
+57 offline tests, no API key required — covering BM25 ranking, every reflection
 parser, the scoring math, and the full control flow (answer, cite, select, and all
 four abstention paths) driven by a scripted fake LLM.
 
