@@ -1,6 +1,10 @@
+<p align="center"><img src="assets/hero.svg" alt="Self-RAG — retrieval that reflects on itself" width="100%"></p>
+
 # self_rag
 
 [![tests](https://github.com/MONISMALIK1/self_rag/actions/workflows/test.yml/badge.svg)](https://github.com/MONISMALIK1/self_rag/actions/workflows/test.yml)
+
+<p align="center"><img src="assets/pipeline.svg" alt="Self-RAG pipeline: retrieve, judge relevance, generate and cite, critique, answer or abstain" width="100%"></p>
 
 A from-scratch, dependency-free implementation of **Self-RAG** — retrieval-augmented
 generation that *reflects on itself*: it decides whether to retrieve, judges whether
